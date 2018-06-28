@@ -53,7 +53,8 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
-    <v-btn color="error" dark class="mb-2" @click="intoDB()">저장하기</v-btn>
+    <v-btn color="error" dark class="mb-2" @click="exportCSVFile(csvheaders, desserts, fileTitle)">저장하기</v-btn>
+
     <v-data-table
       :headers="headers"
       :items="desserts"
@@ -61,17 +62,17 @@
       class="elevation-1"
     >
       <template slot="items" slot-scope="props">
-        <td>{{ props.item.time }}</td>
-        <td class="text-xs-right">{{ props.item.peri }}</td>
-        <td class="text-xs-right">{{ props.item.inter }}</td>
-        <td class="text-xs-right">{{ props.item.t1 }}</td>
-        <td class="text-xs-right">{{ props.item.t2 }}</td>
-        <td class="text-xs-right">{{ props.item.t3 }}</td>
-        <td class="text-xs-right">{{ props.item.t4 }}</td>
-        <td class="text-xs-right">{{ props.item.t5 }}</td>
-        <td class="text-xs-right">{{ props.item.t6 }}</td>
-        <td class="text-xs-right">{{ props.item.t7 }}</td>
-        <td class="text-xs-right">{{ props.item.t8 }}</td>
+        <td class="text-xs-center">{{ props.item.time }}</td>
+        <td class="text-xs-center">{{ props.item.peri }}</td>
+        <td class="text-xs-center">{{ props.item.inter }}</td>
+        <td class="text-xs-center">{{ props.item.t1 }}</td>
+        <td class="text-xs-center">{{ props.item.t2 }}</td>
+        <td class="text-xs-center">{{ props.item.t3 }}</td>
+        <td class="text-xs-center">{{ props.item.t4 }}</td>
+        <td class="text-xs-center">{{ props.item.t5 }}</td>
+        <td class="text-xs-center">{{ props.item.t6 }}</td>
+        <td class="text-xs-center">{{ props.item.t7 }}</td>
+        <td class="text-xs-center">{{ props.item.t8 }}</td>
         <td class="justify-center layout px-0">
           <v-btn icon class="mx-0" @click="editItem(props.item)">
             <v-icon color="teal">edit</v-icon>
@@ -93,10 +94,23 @@
 
     data: () => ({
       dialog: false,
+      csvheaders:
+        {
+          time: '시작시간',
+          peri: '주기',
+          inter: '연동',
+          t1: '현시1',
+          t2: '현시2',
+          t3: '현시3',
+          t4: '현시4',
+          t5: '현시5',
+          t6: '현시6',
+          t7: '현시7',
+          t8: '현시8'
+        },
       headers: [
         {
           text: '시작시간',
-          align: 'left',
           sortable: false,
           value: 'time'
         },
@@ -113,39 +127,40 @@
         { text: 'Actions', value: 'time', sortable: false }
       ],
       desserts: [],
-      csvData: [],
+      //csvData: [],
       editedIndex: -1,
+      fileTitle: 'test',
       editedItem: {
         time: '',
-        peri: 0,
-        inter: 0,
-        t1: 0,
-        t2: 0,
-        t3: 0,
-        t4: 0,
-        t5: 0,
-        t6: 0,
-        t7: 0,
-        t8: 0
+        peri: '',
+        inter: '',
+        t1: '',
+        t2: '',
+        t3: '',
+        t4: '',
+        t5: '',
+        t6: '',
+        t7: '',
+        t8: ''
       },
       defaultItem: {
         time: '',
-        peri: 0,
-        inter: 0,
-        t1: 0,
-        t2: 0,
-        t3: 0,
-        t4: 0,
-        t5: 0,
-        t6: 0,
-        t7: 0,
-        t8: 0
+        peri: '',
+        inter: '',
+        t1: '',
+        t2: '',
+        t3: '',
+        t4: '',
+        t5: '',
+        t6: '',
+        t7: '',
+        t8: ''
       }
     }),
 
     computed: {
       formTitle () {
-        return this.editedIndex === -1 ? 'New Item' : 'Edit Item'
+        return this.editedIndex === -1 ? '일정 추가' : '일정 수정'
       }
     },
 
@@ -203,30 +218,57 @@
         } else {
           this.desserts.push(this.editedItem)
         }
+        console.log('111', this.desserts)
+        const dataStr = JSON.stringify(this.desserts);
+        console.log('json parse', dataStr)
         this.close()
+      },
+
+      convertToCSV(objArray){
+        var array = typeof objArray != 'object' ? JSON.parse(objArray) : objArray;
+        var str = '';
+
+        for(var i=0; i<array.length; i++){
+          var line = '';
+          for(var index in array[i]){
+            if(line != ''){
+              line += ',';
+            }
+            line += array[i][index];
+          }
+          str += line + '\r\n';
+        }
+        return str;
+      },
+
+      exportCSVFile(headers, items, fileTitle){
+        if(headers){
+          items.unshift(headers);
+        }
+
+        var jsonObject = JSON.stringify(items);
+        var csv = this.convertToCSV(jsonObject);
+        var exportedFilenmae = fileTitle + '.csv' || 'export.csv';
+
+        var blob = new Blob([csv], {type: 'text/csv;charset-utf-8;'});
+        if(navigator.msSaveBlob){
+          navigator.msSaveBlob(blob, exportedFilenmae);
+        }
+        else{
+          var link = document.createElement("a");
+          if(link.download !== undefined){
+            var url = URL.createObjectURL(blob);
+            //link.setAttribute("href", url);
+            link.setAttribute("href", "data:text/csv;charset=utf-8,\uFEFF" + encodeURI(csv));
+            link.setAttribute("download", exportedFilenmae);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+          }
+        }
+        console.log('success')
       }
-      /*intoDB(){
-        let mysql = require('mysql');
-        let connection = mysql.createConnection({
-          host: 'localhost',
-          user: '<root>',
-          password: '<tmxk0988>',
-          port: '<3000>',
-          database: 'plan'
-        });
-
-        connection.connect();
-
-        connection.query('SELECT * from table1', function(err, rows, fields){
-          if(!err){
-            console.log('the solution:', rows);
-          }
-          else{
-            console.log('Error', err);
-          }
-        });
-        connection.end();
-      }*/
     }
   }
 </script>
