@@ -201,7 +201,7 @@
 
       deleteItem (item) {
         const index = this.desserts.indexOf(item)
-        confirm('Are you sure you want to delete this item?') && this.desserts.splice(index, 1)
+        confirm('삭제하시겠습니까?') && this.desserts.splice(index, 1)
       },
 
       close () {
@@ -242,11 +242,16 @@
       },
 
       exportCSVFile(headers, items, fileTitle){
-        if(headers){
-          items.unshift(headers);
+        //if(headers){
+        //  items.unshift(headers);
+        //}
+        var item = new Array()
+        for(var i=0; i < items.length; i++){
+          item.push(items[i])
         }
 
-        var jsonObject = JSON.stringify(items);
+        item.unshift(headers)
+        var jsonObject = JSON.stringify(item);
         var csv = this.convertToCSV(jsonObject);
         var exportedFilenmae = fileTitle + '.csv' || 'export.csv';
 
@@ -268,6 +273,9 @@
           }
         }
         console.log('success')
+        console.log('test', jsonObject)
+        console.log('test1', csv)
+        console.log('items', items)
       }
     }
   }
